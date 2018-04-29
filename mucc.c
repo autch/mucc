@@ -28,6 +28,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <unistd.h>
 
 #include "mucc.h"
 #include "hash.h"
@@ -302,6 +303,7 @@ void params( char *p )
 }
 
 
+#ifndef __EMSCRIPTEN__
 int main( int argc, char *argv[] )
 {
 	int i;
@@ -320,5 +322,4 @@ int main( int argc, char *argv[] )
 	return error_cnt;
 }
 
-
-
+#endif // !__EMSCRIPTEN__
