@@ -224,7 +224,7 @@ void conv( char *inf, char *outf )
 	srcname = inf;
 
 	if ( !intype ) {
-		setup_mml( 6 );
+		setup_mml( MAXPART );
 		parse_mml();
 		end_mml();
 	}
@@ -314,7 +314,7 @@ int main( int argc, char *argv[] )
 		conv( srcname, outname );
 	}
 	else {
-		fprintf( stderr, "PIECE music code converter ver1.00 by MIO.H\n" );
+		fprintf( stderr, "PIECE music code converter ver1.00 by MIO.H (16part ext. by Autch)\n" );
 		fprintf( stderr, "usage:mucc [-options] <infile>[<outfile>]\n" );
 		error_cnt = 1;
 	}

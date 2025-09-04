@@ -42,8 +42,8 @@
 #define TITLE     "_title_str"
 #define TITLE2    "_title2_str"
 
-#define MAXMACRO 8
-#define MAXNEST  8
+#define MAXMACRO 32
+#define MAXNEST  32
 
 typedef struct tagMMLPARTWK {
 	short xlen;
@@ -72,8 +72,8 @@ typedef struct tagMMLPARTWK {
 	int ticklevel;		// init'ed to 2
 } MMLPARTWK;
 
-//                  A B C D E F G H I J
-static char pmap[27] = {0,1,2,3,4,5,6,7,8,5,};
+//                      A B C D E F G H I J  K  L  M  N  O  P  Q  R  S  T  U  V  W  X  Y  Z
+static char pmap[27] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25};
 
 static MMLPARTWK pw[27];
 static MMLPARTWK *lxppw = pw;
@@ -874,7 +874,7 @@ void end_mml( void )
 
 	cgout1( CCD_END );
 
-	for ( pno = 0; pno < 6; pno ++ ) {
+	for ( pno = 0; pno < MAXPART; pno ++ ) {
 		MMLPARTWK *ppw = pw + pno;
 		if ( ppw->pos ) {
 			int i;

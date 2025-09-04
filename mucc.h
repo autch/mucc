@@ -22,6 +22,8 @@
 //
 
 
+#define MAXPART         26
+
 
 // ハッシュのタイプ
 #define TYPE_DEFINABLE  0x10
