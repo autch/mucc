@@ -28,7 +28,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
-#include <unistd.h>
+// #include <unistd.h>
 
 #include "mucc.h"
 #include "hash.h"

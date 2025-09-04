@@ -47,7 +47,6 @@
 
 typedef struct tagMMLPARTWK {
 	short xlen;
-	unsigned long total_len;
 	unsigned char tatt;
 	unsigned char xnote;
 	unsigned char pos;
@@ -66,6 +65,11 @@ typedef struct tagMMLPARTWK {
 	signed char vol1;
 	signed char det1;
 	signed char trs;
+
+	int nestdata[MAXNEST];
+	char nestlevel;
+	unsigned long tickstack[MAXNEST * 3];
+	int ticklevel;		// init'ed to 2
 } MMLPARTWK;
 
 //                  A B C D E F G H I J
@@ -78,8 +82,6 @@ static char *lp;
 
 char *macrostack[MAXMACRO];
 char macrolevel = 0;
-int nestdata[MAXNEST];
-char nestlevel = 0;
 unsigned char drumno;
 
 static unsigned long last_f;
@@ -487,7 +489,7 @@ static void notegen( MMLPARTWK *ppw, int code )
 			ppw->xlen = len;
 			cgoutlen( len );
 		}
-			ppw->total_len += len;
+			ppw->tickstack[ppw->ticklevel - 2] += len;
 
 		cgout1( (code >= 0 && code < 96) ? 128+code : CCD_RRR );
 	}
@@ -508,23 +510,35 @@ static void porgen( MMLPARTWK *ppw )
 
 
 
-static void _repeat( void )
+static void _repeat( MMLPARTWK* ppw )
 {
 	cgout1(CCD_RPT);
-	if ( nestlevel == MAXNEST-1 ) fatal( "REPAET nest over" );
-	nestdata[nestlevel++] = cgnowadrs();
+	if ( ppw->nestlevel == MAXNEST-1 ) fatal( "REPAET nest over" );
+	ppw->nestdata[ppw->nestlevel++] = cgnowadrs();
 	cgout1(0);
+
+	ppw->tickstack[ppw->ticklevel++] = 0;
+	ppw->tickstack[ppw->ticklevel++] = 0;
 }
 
-static void _next( int n )
+static void _next( MMLPARTWK* ppw, int n )
 {
-	if ( !nestlevel ) fatal( "REPEAT nest failed" );
-	cgout( nestdata[--nestlevel], n );
+	if ( !ppw->nestlevel ) fatal( "REPEAT nest failed" );
+	cgout( ppw->nestdata[--ppw->nestlevel], n );
 	cgout1(CCD_NXT);
+
+	unsigned long till_break = ppw->tickstack[--ppw->ticklevel];
+	unsigned long loop_ticks = ppw->tickstack[--ppw->ticklevel];
+
+	if(till_break != 0) {
+		ppw->tickstack[ppw->ticklevel - 2] += loop_ticks * (n - 1) + till_break;
+	} else {
+		ppw->tickstack[ppw->ticklevel - 2] += loop_ticks * n;
+	}
 }
 
 
-static ana_body( MMLPARTWK *ppw )
+static void ana_body( MMLPARTWK *ppw )
 {
 	while ( 1 ) {
 		char a = get1c();
@@ -640,16 +654,17 @@ static ana_body( MMLPARTWK *ppw )
 				break;
 			case '[':
 				ppw->xlen = 0;
-				_repeat();
+				_repeat(ppw);
 				new_label = 0;
 				break;
 			case ']':
-				_next( getval() );	// ‰ñ”
+				_next( ppw, getval() );	// ‰ñ”
 				ppw->xlen = 0;
 				new_label = 0;
 				break;
 			case ':':
 				cgout1( CCD_BRK );
+				ppw->tickstack[ppw->ticklevel - 1] = ppw->tickstack[ppw->ticklevel - 2];
 				new_label = 0;
 				break;
 			case '<':
@@ -818,6 +833,8 @@ void setup_mml( int partn )
 	cgout1( partn );
 	for ( i = 0; i < partn; i++ ) {
 		mkposadrs( i, 0 );
+
+		pw[i].ticklevel = 2;
 	}
 
 	mkadrs( DRMS_POS0 );
@@ -874,7 +891,11 @@ void end_mml( void )
 			}
 			else cgout1( CCD_END );
 		}
-		fprintf(stderr, "%c: %ld ticks\n", 'A' + pno, ppw->total_len);
+		{
+			long ticks = ppw->tickstack[ppw->ticklevel - 2];
+			if(ticks > 0)
+				fprintf(stderr, "%c: %ld ticks\n", 'A' + pno, ticks);
+		}
 	}
 
 	if ( drumno ) {
