@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.20)
+project(mucc LANGUAGES C)
 
 add_executable(mucc
   codegen.c
@@ -8,6 +9,11 @@ add_executable(mucc
   hash.c
   msrcv.c
   reserved.c
+
+  codegen.h
+  hash.h
+  mucc.h
+  reserved.h
 )
 
 if (EMSCRIPTEN)
